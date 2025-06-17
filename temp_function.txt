@@ -1,0 +1,30 @@
+  // 🔍 Search and Recommend with Confidence Level
+  private async searchAndRecommendWithConfidence(readiness: 'ready' | 'viable'): Promise<string> {
+    try {
+      const toolInput = JSON.stringify({
+        kategorie: this.context.kategorie,
+        presupuesto_max: this.context.presupuesto_max || this.getDefaultBudget(),
+        marca: this.context.marca
+      });
+      
+      console.log(`🔍 Searching with ${readiness} confidence level:`, toolInput);
+      
+      const toolResult = await enhancedProductSearchTool.func(toolInput);
+      return toolResult; // Direct return of formatted product results
+      
+    } catch (error) {
+      console.error("❌ Confidence-based search error:", error);
+      return "😅 Tuve un problema buscando productos. ¿Podrías intentar reformular tu búsqueda?";
+    }
+  }
+
+  private getDefaultBudget(): number {
+    switch (this.context.kategorie) {
+      case 'televisor': return 2000000;
+      case 'celular': return 1500000;
+      case 'computador': return 3000000;
+      case 'lavadora': return 2500000;
+      case 'nevera': return 3500000;
+      default: return 2000000;
+    }
+  }

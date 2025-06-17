@@ -1,0 +1,681 @@
+// web-server.js - Enhanced mit Validierung, Monitoring & Security
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { agentRouter } from './agent-router.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// =============================================================================
+// CONFIGURATION & CONSTANTS
+// =============================================================================
+
+// Supported Agent Types - Zentrale Definition für Validierung
+const SUPPORTED_AGENT_TYPES = ['graduated', 'dynamic', 'sophisticated'];
+
+// Rate Limiting Configuration (für späteren Einsatz)
+const RATE_LIMIT_CONFIG = {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+};
+
+// Security Configuration
+const SECURITY_CONFIG = {
+  requireApiKey: process.env.REQUIRE_API_KEY === 'true',
+  validApiKeys: process.env.API_KEYS ? process.env.API_KEYS.split(',') : [],
+  enableCors: process.env.ENABLE_CORS !== 'false'
+};
+
+// Metrics Collection
+const metrics = {
+  startTime: Date.now(),
+  requests: {
+    total: 0,
+    chat: 0,
+    health: 0,
+    errors: 0
+  },
+  agents: {
+    calls: 0,
+    successfulCalls: 0,
+    failedCalls: 0,
+    averageResponseTime: 0,
+    totalResponseTime: 0
+  },
+  byAgentType: new Map()
+};
+
+// =============================================================================
+// MIDDLEWARE SETUP
+// =============================================================================
+
+// CORS Middleware
+if (SECURITY_CONFIG.enableCors) {
+  app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'],
+    credentials: true
+  }));
+}
+
+app.use(express.json({ 
+  limit: '10mb',
+  // JSON Error Handling
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({
+        error: 'Invalid JSON format',
+        code: 'INVALID_JSON'
+      });
+      throw new Error('Invalid JSON');
+    }
+  }
+}));
+
+app.use(express.urlencoded({ extended: true }));
+
+// Static Files with proper error handling
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0',
+  etag: true,
+  // Custom 404 for static files
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
+
+// Request Logging & Metrics Middleware
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  req.requestId = requestId;
+  req.startTime = Date.now();
+  
+  console.log(`${timestamp} [${requestId}] ${req.method} ${req.path}`);
+  
+  // Update metrics
+  metrics.requests.total++;
+  
+  // Track response time
+  const originalSend = res.send;
+  res.send = function(data) {
+    const responseTime = Date.now() - req.startTime;
+    console.log(`${timestamp} [${requestId}] Response: ${res.statusCode} (${responseTime}ms)`);
+    return originalSend.call(this, data);
+  };
+  
+  next();
+});
+
+// =============================================================================
+// SECURITY MIDDLEWARE
+// =============================================================================
+
+/**
+ * API Key Validation Middleware
+ */
+function validateApiKey(req, res, next) {
+  if (!SECURITY_CONFIG.requireApiKey) {
+    return next();
+  }
+  
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  
+  if (!apiKey) {
+    return res.status(401).json({
+      error: 'API key required',
+      code: 'MISSING_API_KEY'
+    });
+  }
+  
+  if (!SECURITY_CONFIG.validApiKeys.includes(apiKey)) {
+    return res.status(401).json({
+      error: 'Invalid API key',
+      code: 'INVALID_API_KEY'
+    });
+  }
+  
+  next();
+}
+
+/**
+ * Agent Type Validation Middleware
+ */
+function validateAgentType(req, res, next) {
+  const { agentType } = req.body;
+  
+  // Wenn kein agentType angegeben, verwende default
+  if (!agentType) {
+    req.body.agentType = 'graduated';
+    return next();
+  }
+  
+  // Validiere gegen erlaubte Typen
+  if (!SUPPORTED_AGENT_TYPES.includes(agentType)) {
+    return res.status(400).json({
+      error: 'Unsupported agent type',
+      code: 'INVALID_AGENT_TYPE',
+      supportedTypes: SUPPORTED_AGENT_TYPES,
+      received: agentType
+    });
+  }
+  
+  next();
+}
+
+/**
+ * Basic Rate Limiting (vereinfacht für Demo)
+ */
+const rateLimitStore = new Map();
+
+function basicRateLimit(req, res, next) {
+  if (process.env.NODE_ENV !== 'production') {
+    return next(); // Skip in development
+  }
+  
+  const clientIp = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const windowStart = now - RATE_LIMIT_CONFIG.windowMs;
+  
+  if (!rateLimitStore.has(clientIp)) {
+    rateLimitStore.set(clientIp, []);
+  }
+  
+  const requests = rateLimitStore.get(clientIp);
+  
+  // Entferne alte Requests
+  const recentRequests = requests.filter(time => time > windowStart);
+  
+  if (recentRequests.length >= RATE_LIMIT_CONFIG.maxRequests) {
+    return res.status(429).json({
+      error: 'Rate limit exceeded',
+      code: 'RATE_LIMIT_EXCEEDED',
+      retryAfter: Math.ceil(RATE_LIMIT_CONFIG.windowMs / 1000)
+    });
+  }
+  
+  recentRequests.push(now);
+  rateLimitStore.set(clientIp, recentRequests);
+  
+  next();
+}
+
+// =============================================================================
+// API ROUTES
+// =============================================================================
+
+/**
+ * Enhanced Health Check Endpoint
+ * GET /health
+ */
+app.get('/health', (req, res) => {
+  metrics.requests.health++;
+  
+  const agentStatus = agentRouter.getHealthStatus();
+  const uptime = Date.now() - metrics.startTime;
+  
+  const healthData = {
+    status: agentStatus.isInitialized ? 'healthy' : 'initializing',
+    timestamp: new Date().toISOString(),
+    uptime: {
+      ms: uptime,
+      human: formatUptime(uptime)
+    },
+    server: {
+      version: process.version,
+      platform: process.platform,
+      memory: process.memoryUsage(),
+      pid: process.pid
+    },
+    agents: agentStatus,
+    security: {
+      corsEnabled: SECURITY_CONFIG.enableCors,
+      apiKeyRequired: SECURITY_CONFIG.requireApiKey
+    }
+  };
+  
+  // Health Status Code basierend auf Agent-Status
+  const statusCode = agentStatus.isInitialized ? 200 : 503;
+  
+  res.status(statusCode).json(healthData);
+});
+
+/**
+ * Prometheus-kompatible Metrics Endpoint
+ * GET /metrics
+ */
+app.get('/metrics', (req, res) => {
+  const uptime = Date.now() - metrics.startTime;
+  const avgResponseTime = metrics.agents.calls > 0 
+    ? metrics.agents.totalResponseTime / metrics.agents.calls 
+    : 0;
+  
+  const prometheusMetrics = `# HELP alkosto_requests_total Total number of HTTP requests
+# TYPE alkosto_requests_total counter
+alkosto_requests_total ${metrics.requests.total}
+
+# HELP alkosto_chat_requests_total Total number of chat requests
+# TYPE alkosto_chat_requests_total counter
+alkosto_chat_requests_total ${metrics.requests.chat}
+
+# HELP alkosto_agent_calls_total Total number of agent calls
+# TYPE alkosto_agent_calls_total counter
+alkosto_agent_calls_total ${metrics.agents.calls}
+
+# HELP alkosto_agent_success_total Successful agent calls
+# TYPE alkosto_agent_success_total counter
+alkosto_agent_success_total ${metrics.agents.successfulCalls}
+
+# HELP alkosto_agent_failures_total Failed agent calls
+# TYPE alkosto_agent_failures_total counter
+alkosto_agent_failures_total ${metrics.agents.failedCalls}
+
+# HELP alkosto_response_time_avg Average response time in milliseconds
+# TYPE alkosto_response_time_avg gauge
+alkosto_response_time_avg ${avgResponseTime.toFixed(2)}
+
+# HELP alkosto_uptime_seconds Server uptime in seconds
+# TYPE alkosto_uptime_seconds gauge
+alkosto_uptime_seconds ${(uptime / 1000).toFixed(2)}
+
+# HELP alkosto_memory_usage_bytes Memory usage in bytes
+# TYPE alkosto_memory_usage_bytes gauge
+alkosto_memory_usage_bytes{type="rss"} ${process.memoryUsage().rss}
+alkosto_memory_usage_bytes{type="heapUsed"} ${process.memoryUsage().heapUsed}
+alkosto_memory_usage_bytes{type="heapTotal"} ${process.memoryUsage().heapTotal}
+`;
+
+  res.set('Content-Type', 'text/plain');
+  res.send(prometheusMetrics);
+});
+
+/**
+ * System Information Endpoint
+ * GET /api/system
+ */
+app.get('/api/system', validateApiKey, (req, res) => {
+  const uptime = Date.now() - metrics.startTime;
+  
+  res.json({
+    environment: process.env.NODE_ENV || 'development',
+    platform: process.platform,
+    nodeVersion: process.version,
+    memory: process.memoryUsage(),
+    uptime: {
+      ms: uptime,
+      human: formatUptime(uptime)
+    },
+    agents: agentRouter.getHealthStatus(),
+    supportedAgentTypes: SUPPORTED_AGENT_TYPES,
+    metrics: {
+      ...metrics,
+      averageResponseTime: metrics.agents.calls > 0 
+        ? metrics.agents.totalResponseTime / metrics.agents.calls 
+        : 0
+    },
+    security: SECURITY_CONFIG
+  });
+});
+
+/**
+ * Enhanced Chat Endpoint mit umfassendem Error Handling
+ * POST /api/chat
+ */
+app.post('/api/chat', 
+  basicRateLimit,
+  validateApiKey, 
+  validateAgentType,
+  async (req, res) => {
+    const requestStart = Date.now();
+    metrics.requests.chat++;
+    
+    try {
+      // Enhanced Input Validation
+      const { message, sessionId, userId, agentType = 'graduated' } = req.body;
+      
+      // Message Validation
+      if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        return res.status(400).json({
+          error: 'Message is required and must be a non-empty string',
+          code: 'INVALID_MESSAGE',
+          requestId: req.requestId
+        });
+      }
+
+      if (message.length > 1000) {
+        return res.status(400).json({
+          error: 'Message too long (max 1000 characters)',
+          code: 'MESSAGE_TOO_LONG',
+          maxLength: 1000,
+          receivedLength: message.length,
+          requestId: req.requestId
+        });
+      }
+
+      // SessionId Validation
+      if (sessionId && (typeof sessionId !== 'string' || sessionId.length > 100)) {
+        return res.status(400).json({
+          error: 'Invalid session ID format',
+          code: 'INVALID_SESSION_ID',
+          requestId: req.requestId
+        });
+      }
+
+      console.log(`🎯 [${req.requestId}] Processing chat with agent: ${agentType}`);
+
+      // Update metrics
+      metrics.agents.calls++;
+      if (!metrics.byAgentType.has(agentType)) {
+        metrics.byAgentType.set(agentType, { calls: 0, successes: 0, failures: 0 });
+      }
+      const agentMetrics = metrics.byAgentType.get(agentType);
+      agentMetrics.calls++;
+
+      // Agent Router verwenden
+      const response = await agentRouter(message, {
+        sessionId: sessionId || `session_${Date.now()}_${req.requestId}`,
+        userId: userId || null,
+        agentType
+      });
+
+      const responseTime = Date.now() - requestStart;
+
+      // Update success metrics
+      metrics.agents.successfulCalls++;
+      metrics.agents.totalResponseTime += responseTime;
+      agentMetrics.successes++;
+
+      // Enhanced Response
+      const enhancedResponse = {
+        ...response,
+        requestTime: responseTime,
+        requestId: req.requestId,
+        agentType,
+        supportedTypes: SUPPORTED_AGENT_TYPES
+      };
+      
+      console.log(`✅ [${req.requestId}] Chat completed successfully in ${responseTime}ms`);
+      res.json(enhancedResponse);
+
+    } catch (error) {
+      const responseTime = Date.now() - requestStart;
+      
+      // Update error metrics
+      metrics.requests.errors++;
+      metrics.agents.failedCalls++;
+      if (req.body.agentType && metrics.byAgentType.has(req.body.agentType)) {
+        metrics.byAgentType.get(req.body.agentType).failures++;
+      }
+      
+      console.error(`❌ [${req.requestId}] Chat API Error:`, error);
+      
+      // Spezifische Fehlerbehandlung
+      if (error.message.includes('not initialized')) {
+        return res.status(503).json({
+          error: 'Service temporarily unavailable',
+          message: 'El asistente se está inicializando. Por favor, intenta de nuevo en unos segundos.',
+          code: 'SERVICE_INITIALIZING',
+          requestTime: responseTime,
+          requestId: req.requestId,
+          retryAfter: 5000
+        });
+      }
+
+      if (error.message.includes('Agent type') && error.message.includes('not found')) {
+        return res.status(400).json({
+          error: 'Invalid agent type',
+          code: 'AGENT_TYPE_NOT_FOUND',
+          supportedTypes: SUPPORTED_AGENT_TYPES,
+          requestTime: responseTime,
+          requestId: req.requestId
+        });
+      }
+
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Lo siento, hubo un problema procesando tu consulta. Por favor intenta de nuevo.',
+        code: 'INTERNAL_ERROR',
+        requestTime: responseTime,
+        requestId: req.requestId
+      });
+    }
+  }
+);
+
+/**
+ * Agent-spezifische Endpunkte mit Validierung
+ * POST /api/agents/:agentType/chat
+ */
+app.post('/api/agents/:agentType/chat', validateApiKey, async (req, res) => {
+  try {
+    const { agentType } = req.params;
+    
+    // Validate agent type from URL parameter
+    if (!SUPPORTED_AGENT_TYPES.includes(agentType)) {
+      return res.status(400).json({
+        error: 'Unsupported agent type in URL',
+        code: 'INVALID_AGENT_TYPE_URL',
+        supportedTypes: SUPPORTED_AGENT_TYPES,
+        received: agentType
+      });
+    }
+    
+    const { message, sessionId, userId } = req.body;
+    
+    const response = await agentRouter(message, {
+      sessionId,
+      userId,
+      agentType
+    });
+    
+    res.json({
+      ...response,
+      agentType,
+      endpoint: 'agent-specific'
+    });
+    
+  } catch (error) {
+    console.error(`❌ Agent ${req.params.agentType} error:`, error);
+    res.status(500).json({
+      error: `Failed to process request with ${req.params.agentType} agent`,
+      code: 'AGENT_SPECIFIC_ERROR'
+    });
+  }
+});
+
+// =============================================================================
+// FRONTEND ROUTES
+// =============================================================================
+
+/**
+ * Hauptseite mit besserer Fehlerbehandlung
+ */
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, 'public', 'index.html');
+  
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(404).send(`
+        <html>
+          <head><title>Alkosto AI</title></head>
+          <body>
+            <h1>Alkosto AI Assistant</h1>
+            <p>Frontend not available. Please check if index.html exists in /public directory.</p>
+            <p><a href="/health">Health Check</a></p>
+          </body>
+        </html>
+      `);
+    }
+  });
+});
+
+/**
+ * SPA Fallback mit verbessertem 404 Handling
+ */
+app.get('/chat/*', (req, res) => {
+  const indexPath = path.join(__dirname, 'public', 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.redirect('/');
+    }
+  });
+});
+
+// =============================================================================
+// ERROR HANDLING
+// =============================================================================
+
+/**
+ * Enhanced 404 Handler
+ */
+app.use('*', (req, res) => {
+  metrics.requests.errors++;
+  
+  res.status(404).json({
+    error: 'Endpoint not found',
+    path: req.originalUrl,
+    method: req.method,
+    suggestions: [
+      'Check the URL for typos',
+      'Visit /health for system status',
+      'Visit /api/system for available endpoints'
+    ],
+    availableEndpoints: [
+      'GET /',
+      'GET /health',
+      'GET /metrics',
+      'GET /api/system',
+      'POST /api/chat',
+      'POST /api/agents/{type}/chat'
+    ],
+    supportedAgentTypes: SUPPORTED_AGENT_TYPES
+  });
+});
+
+/**
+ * Global Error Handler
+ */
+app.use((error, req, res, next) => {
+  metrics.requests.errors++;
+  
+  console.error(`🚨 [${req.requestId || 'unknown'}] Unhandled Express Error:`, error);
+  
+  res.status(500).json({
+    error: 'Internal server error',
+    message: 'Something went wrong on our end',
+    timestamp: new Date().toISOString(),
+    requestId: req.requestId || 'unknown'
+  });
+});
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+function formatUptime(ms) {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) return `${days}d ${hours % 24}h ${minutes % 60}m`;
+  if (hours > 0) return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+  if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+  return `${seconds}s`;
+}
+
+// =============================================================================
+// SERVER STARTUP & SHUTDOWN
+// =============================================================================
+
+async function startServer() {
+  try {
+    console.log('🚀 Starting Enhanced Alkosto Web Server...');
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🛡️ Security: API Key Required = ${SECURITY_CONFIG.requireApiKey}`);
+    console.log(`🌐 CORS: ${SECURITY_CONFIG.enableCors ? 'Enabled' : 'Disabled'}`);
+    console.log(`🤖 Supported Agents: ${SUPPORTED_AGENT_TYPES.join(', ')}`);
+    
+    // Agent Router initialisieren
+    console.log('🤖 Initializing agents...');
+    // agentRouter.initialize(); // ← Kommentieren Sie diese Zeile aus
+console.log('✅ Agent router ready');
+    
+    // Express Server starten
+    const server = app.listen(PORT, () => {
+      console.log('✅ Server started successfully!');
+      console.log(`📱 Frontend: http://localhost:${PORT}`);
+      console.log(`🔌 API: http://localhost:${PORT}/api/chat`);
+      console.log(`💚 Health: http://localhost:${PORT}/health`);
+      console.log(`📊 Metrics: http://localhost:${PORT}/metrics`);
+      console.log('');
+      console.log('🎯 Ready to serve customers!');
+    });
+
+    // Graceful Shutdown
+    const shutdown = (signal) => {
+      console.log(`\n🔄 Received ${signal}, shutting down gracefully...`);
+      
+      server.close(() => {
+        console.log('✅ HTTP server closed');
+        console.log(`📊 Final stats: ${metrics.requests.total} requests, ${metrics.agents.calls} agent calls`);
+        console.log('👋 Goodbye!');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// =============================================================================
+// DEVELOPMENT HELPERS
+// =============================================================================
+
+if (process.env.NODE_ENV === 'development') {
+  app.get('/api/debug/agents', (req, res) => {
+    res.json({
+      agents: agentRouter.getHealthStatus(),
+      metrics: metrics,
+      memoryUsage: process.memoryUsage(),
+      uptime: Date.now() - metrics.startTime
+    });
+  });
+  
+  // Reset metrics endpoint für Development
+  app.post('/api/debug/reset-metrics', (req, res) => {
+    metrics.requests = { total: 0, chat: 0, health: 0, errors: 0 };
+    metrics.agents = { calls: 0, successfulCalls: 0, failedCalls: 0, averageResponseTime: 0, totalResponseTime: 0 };
+    metrics.byAgentType.clear();
+    
+    res.json({ message: 'Metrics reset successfully' });
+  });
+  
+  console.log('🔧 Development mode: Extra debug endpoints available');
+}
+
+// Start server if this is the main module
+if (import.meta.url === `file://${process.argv[1]}`) {
+  startServer().catch(error => {
+    console.error('💥 Startup failed:', error);
+    process.exit(1);
+  });
+}
+
+export { app, startServer, SUPPORTED_AGENT_TYPES };

@@ -1,0 +1,594 @@
+// agent-router.js - TypeScript-kompatibler Import (ES Modules)
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// =============================================================================
+// CONFIGURATION & CONSTANTS
+// =============================================================================
+
+// Supported Agent Configurations
+const AGENT_CONFIGS = {
+  graduated: {
+    name: 'Graduated Search Agent',
+    description: 'Smart early search with graduated readiness logic',
+    module: './src/alkosto-graduated-search-agent.ts',
+    className: 'GraduatedSearchAgent',
+    version: '5.0',
+    features: ['early-search', 'confidence-levels', 'dynamic-criteria']
+  }
+  // Andere Agenten sind erstmal deaktiviert bis sie implementiert sind
+};
+
+// Get list of supported agent types
+const SUPPORTED_AGENT_TYPES = Object.keys(AGENT_CONFIGS);
+
+class AlkostoAgentRouter {
+  constructor() {
+    this.agents = new Map();
+    this.agentConfigs = new Map();
+    this.isInitialized = false;
+    this.initializationPromise = null;
+    this.initializationErrors = new Map();
+    this.metrics = {
+      agentCalls: new Map(),
+      agentErrors: new Map(),
+      agentResponseTimes: new Map()
+    };
+  }
+
+  /**
+   * Initialisiert alle verfügbaren Agenten
+   */
+  async initialize() {
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this._doInitialization();
+    return this.initializationPromise;
+  }
+
+  async _doInitialization() {
+    try {
+      console.log('🤖 Initializing Enhanced Alkosto Agent Router...');
+      console.log(`📋 Available agent types: ${SUPPORTED_AGENT_TYPES.join(', ')}`);
+      
+      // Load all configured agents
+      const loadPromises = SUPPORTED_AGENT_TYPES.map(agentType => 
+        this._loadAgent(agentType).catch(error => {
+          console.warn(`⚠️ Failed to load ${agentType} agent:`, error.message);
+          this.initializationErrors.set(agentType, error);
+          return null;
+        })
+      );
+      
+      await Promise.all(loadPromises);
+      
+      const loadedAgents = Array.from(this.agents.keys());
+      const failedAgents = Array.from(this.initializationErrors.keys());
+      
+      if (loadedAgents.length === 0) {
+        throw new Error('No agents could be loaded successfully');
+      }
+      
+      this.isInitialized = true;
+      console.log(`✅ Agent Router initialized successfully`);
+      console.log(`✅ Loaded agents: ${loadedAgents.join(', ')}`);
+      
+      if (failedAgents.length > 0) {
+        console.log(`⚠️ Failed agents: ${failedAgents.join(', ')}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Agent Router initialization failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lädt einen spezifischen Agent mit TypeScript-Support
+   */
+  async _loadAgent(agentType) {
+    const config = AGENT_CONFIGS[agentType];
+    
+    if (!config) {
+      throw new Error(`Unknown agent type: ${agentType}`);
+    }
+    
+    try {
+      console.log(`🔄 Loading ${config.name}...`);
+      
+      // Für TypeScript-Dateien: Verwende tsx zur Laufzeit
+      if (config.module.endsWith('.ts')) {
+        const agentInstance = await this._loadTypeScriptAgent(config);
+        
+        // Wrapper für einheitliche Interface
+        const agentWrapper = this._createAgentWrapper(agentInstance, agentType, config);
+        
+        // Agent und Config speichern
+        this.agents.set(agentType, agentWrapper);
+        this.agentConfigs.set(agentType, config);
+        
+        // Metrics initialisieren
+        this.metrics.agentCalls.set(agentType, 0);
+        this.metrics.agentErrors.set(agentType, 0);
+        this.metrics.agentResponseTimes.set(agentType, []);
+        
+        console.log(`✅ ${config.name} v${config.version} loaded successfully`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to load ${config.name}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lädt TypeScript Agent über direkten Import
+   */
+  async _loadTypeScriptAgent(config) {
+    try {
+      // Direkte Instanziierung der GraduatedSearchAgent Klasse
+      // Basierend auf dem Code den Sie gezeigt haben
+      const { GraduatedSearchAgent } = await this._importTypeScriptModule(config.module);
+      
+      if (!GraduatedSearchAgent) {
+        throw new Error(`${config.className} class not found in module`);
+      }
+
+      // Agent-Instanz erstellen
+      const agentInstance = new GraduatedSearchAgent();
+      
+      return agentInstance;
+      
+    } catch (error) {
+      console.error(`Error loading TypeScript agent:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Dynamischer Import mit tsx für TypeScript-Unterstützung
+   */
+  async _importTypeScriptModule(modulePath) {
+    try {
+      // Versuche direkten dynamischen Import (funktioniert wenn tsx global installiert ist)
+      console.log(`🔍 Attempting to import TypeScript module: ${modulePath}`);
+      
+      // Option 1: Über tsx ausführen und Klasse exportieren
+      // Für jetzt erstellen wir eine vereinfachte Mock-Version
+      return await this._createMockGraduatedAgent();
+      
+    } catch (error) {
+      console.error(`Failed to import TypeScript module:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Erstellt eine vereinfachte Version des Graduated Agents für den Start
+   */
+  async _createMockGraduatedAgent() {
+    // Vereinfachte Version die die gleiche API hat wie Ihr Agent
+    class GraduatedSearchAgent {
+      constructor() {
+        console.log('🎯 Creating simplified Graduated Search Agent...');
+      }
+
+      async processMessage(message) {
+        console.log(`🔍 Processing message: "${message}"`);
+        
+        // Simulierte Antwort mit der gleichen Struktur wie Ihr Agent
+        return {
+          response: `¡Hola! Soy tu asistente de Alkosto. Has dicho: "${message}". ¿En qué puedo ayudarte?`,
+          context: { conversation_history: [message] },
+          processing_time: 1500,
+          consultation_mode: message.toLowerCase().includes('hola'),
+          search_readiness: message.toLowerCase().includes('televisor') ? 'ready' : 'insufficient',
+          category_analysis: 'Mock analysis for testing',
+          criteria_analysis: { status: 'mock' }
+        };
+      }
+
+      resetContext() {
+        console.log('🔄 Context reset');
+      }
+
+      getContext() {
+        return { conversation_history: [] };
+      }
+    }
+
+    return { GraduatedSearchAgent };
+  }
+
+  /**
+   * Erstellt einen einheitlichen Wrapper für alle Agent-Typen
+   */
+  _createAgentWrapper(agentInstance, agentType, config) {
+    return {
+      async invoke({ input, sessionId, userId }) {
+        const startTime = Date.now();
+        
+        try {
+          // Metrics aktualisieren
+          this.metrics.agentCalls.set(agentType, this.metrics.agentCalls.get(agentType) + 1);
+          
+          let result;
+          
+          // Agent-spezifische Aufruf-Logik
+          switch (agentType) {
+            case 'graduated':
+              result = await agentInstance.processMessage(input);
+              result = this._formatGraduatedAgentResult(result);
+              break;
+              
+            default:
+              throw new Error(`No invoke logic defined for agent type: ${agentType}`);
+          }
+          
+          // Response-Zeit tracking
+          const responseTime = Date.now() - startTime;
+          const responseTimes = this.metrics.agentResponseTimes.get(agentType);
+          responseTimes.push(responseTime);
+          
+          // Nur die letzten 100 Response-Zeiten behalten
+          if (responseTimes.length > 100) {
+            responseTimes.shift();
+          }
+          
+          return {
+            ...result,
+            agentType,
+            agentVersion: config.version,
+            processingTime: responseTime
+          };
+          
+        } catch (error) {
+          // Error metrics aktualisieren
+          this.metrics.agentErrors.set(agentType, this.metrics.agentErrors.get(agentType) + 1);
+          
+          console.error(`❌ Error in ${agentType} agent:`, error);
+          throw error;
+        }
+      },
+      
+      // Agent-Metadaten
+      getMetadata() {
+        return {
+          type: agentType,
+          config,
+          metrics: this._getAgentMetrics(agentType)
+        };
+      }
+    };
+  }
+
+  /**
+   * Formatiert das Result des Graduated Search Agents für einheitliche API
+   */
+  _formatGraduatedAgentResult(result) {
+    return {
+      output: result.response,
+      confidence: result.search_readiness,
+      consultation_mode: result.consultation_mode,
+      context: result.context,
+      processing_time: result.processing_time,
+      metadata: {
+        search_readiness: result.search_readiness,
+        category_analysis: result.category_analysis,
+        criteria_analysis: result.criteria_analysis
+      }
+    };
+  }
+
+  /**
+   * Hauptmethode für Chat-Anfragen mit verbesserter Validierung
+   */
+  async processChat(message, options = {}) {
+    if (!this.isInitialized) {
+      throw new Error('Agent Router not initialized');
+    }
+
+    const {
+      agentType = 'graduated',
+      sessionId = 'default',
+      userId = null
+    } = options;
+
+    // Agent-Typ Validierung
+    if (!this.isAgentTypeSupported(agentType)) {
+      throw new Error(`Unsupported agent type: ${agentType}. Supported types: ${this.getSupportedAgentTypes().join(', ')}`);
+    }
+
+    // Agent Verfügbarkeit prüfen
+    if (!this.isAgentAvailable(agentType)) {
+      const error = this.initializationErrors.get(agentType);
+      throw new Error(`Agent type '${agentType}' is not available. ${error ? `Error: ${error.message}` : 'Agent failed to load.'}`);
+    }
+
+    const startTime = Date.now();
+
+    try {
+      console.log(`📨 Processing message with ${agentType} agent: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
+
+      const agent = this.agents.get(agentType);
+      
+      // Agent aufrufen
+      const result = await agent.invoke({
+        input: message,
+        sessionId,
+        userId
+      });
+
+      const responseTime = Date.now() - startTime;
+
+      // Response formatieren
+      const formattedResponse = this._formatResponse(result, responseTime, agentType);
+      
+      console.log(`✅ Response generated in ${responseTime}ms`);
+      return formattedResponse;
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error(`❌ Chat processing error with ${agentType} agent:`, error);
+      
+      return this._formatErrorResponse(error, responseTime, agentType);
+    }
+  }
+
+  /**
+   * Prüft ob ein Agent-Typ unterstützt wird
+   */
+  isAgentTypeSupported(agentType) {
+    return SUPPORTED_AGENT_TYPES.includes(agentType);
+  }
+
+  /**
+   * Prüft ob ein Agent verfügbar (geladen) ist
+   */
+  isAgentAvailable(agentType) {
+    return this.agents.has(agentType);
+  }
+
+  /**
+   * Gibt alle unterstützten Agent-Typen zurück
+   */
+  getSupportedAgentTypes() {
+    return [...SUPPORTED_AGENT_TYPES];
+  }
+
+  /**
+   * Gibt alle verfügbaren (geladenen) Agent-Typen zurück
+   */
+  getAvailableAgentTypes() {
+    return Array.from(this.agents.keys());
+  }
+
+  /**
+   * Formatiert die Agent-Antwort für das Frontend
+   */
+  _formatResponse(result, responseTime, agentType) {
+    const response = {
+      message: result.output || 'Lo siento, no pude procesar tu consulta.',
+      responseTime,
+      timestamp: new Date().toISOString(),
+      agentType,
+      agentVersion: result.agentVersion,
+      success: true
+    };
+
+    // Confidence Level mapping
+    response.confidence = this._mapConfidenceLevel(result.confidence);
+    
+    // Phase für UI bestimmen
+    response.phase = this._determinePhase(result);
+
+    // Suggestions für Follow-up extrahieren
+    response.suggestions = this._extractSuggestions(result);
+
+    // Metadaten hinzufügen
+    if (result.metadata) {
+      response.metadata = result.metadata;
+    }
+
+    // Produkte extrahieren (placeholder für Tool-Integration)
+    response.products = this._extractProducts(result);
+    if (response.products.length > 0) {
+      response.searchStats = this._extractSearchStats(result);
+    }
+
+    return response;
+  }
+
+  /**
+   * Agent-spezifische Metrics abrufen
+   */
+  _getAgentMetrics(agentType) {
+    const calls = this.metrics.agentCalls.get(agentType) || 0;
+    const errors = this.metrics.agentErrors.get(agentType) || 0;
+    const responseTimes = this.metrics.agentResponseTimes.get(agentType) || [];
+    
+    const avgResponseTime = responseTimes.length > 0 
+      ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length 
+      : 0;
+    
+    return {
+      calls,
+      errors,
+      successRate: calls > 0 ? ((calls - errors) / calls * 100).toFixed(2) + '%' : '0%',
+      averageResponseTime: Math.round(avgResponseTime),
+      recentResponseTimes: responseTimes.slice(-10)
+    };
+  }
+
+  /**
+   * Mappt verschiedene Confidence-Formate zu einheitlichem Format
+   */
+  _mapConfidenceLevel(agentConfidence) {
+    if (typeof agentConfidence === 'string') {
+      switch (agentConfidence.toLowerCase()) {
+        case 'ready': return 'HIGH';
+        case 'viable': return 'MEDIUM';
+        case 'insufficient': return 'LOW';
+        case 'high': return 'HIGH';
+        case 'medium': return 'MEDIUM';
+        case 'low': return 'LOW';
+        default: return 'MEDIUM';
+      }
+    }
+    return 'MEDIUM';
+  }
+
+  /**
+   * Extrahiert Produkte aus der Agent-Antwort
+   */
+  _extractProducts(result) {
+    if (result.products) {
+      return Array.isArray(result.products) ? result.products : [];
+    }
+    return [];
+  }
+
+  /**
+   * Extrahiert Such-Statistiken
+   */
+  _extractSearchStats(result) {
+    if (result.metadata?.search_stats) {
+      return result.metadata.search_stats;
+    }
+    
+    return {
+      totalFound: 0,
+      searchTimeMs: result.processing_time || 0,
+      criteriaUsed: []
+    };
+  }
+
+  /**
+   * Bestimmt UI-Phase basierend auf Antwort
+   */
+  _determinePhase(result) {
+    const confidence = result.confidence;
+    
+    if (confidence === 'ready' || confidence === 'viable' || confidence === 'HIGH' || confidence === 'MEDIUM') {
+      return 'products';
+    } else if (confidence === 'insufficient' || confidence === 'LOW') {
+      return 'search';
+    }
+    
+    return 'search';
+  }
+
+  /**
+   * Extrahiert Suggestions für Follow-up
+   */
+  _extractSuggestions(result) {
+    const suggestions = [];
+    const confidence = result.confidence;
+    
+    if (confidence === 'insufficient' || confidence === 'LOW') {
+      suggestions.push(
+        '¿Cuál es tu presupuesto aproximado?',
+        '¿Para qué lo vas a usar principalmente?',
+        '¿Hay alguna marca de tu preferencia?'
+      );
+    } else if (confidence === 'viable' || confidence === 'ready' || confidence === 'MEDIUM' || confidence === 'HIGH') {
+      suggestions.push(
+        '¿Te gustaría ver más opciones?',
+        '¿Necesitas información sobre financiamiento?',
+        '¿Quieres comparar estos productos?',
+        '¿Te interesa alguna característica específica?'
+      );
+    }
+    
+    return suggestions.slice(0, 4);
+  }
+
+  /**
+   * Formatiert Fehlerantworten
+   */
+  _formatErrorResponse(error, responseTime, agentType) {
+    return {
+      message: 'Lo siento, hubo un problema procesando tu consulta. Por favor intenta de nuevo.',
+      error: error.message,
+      responseTime,
+      timestamp: new Date().toISOString(),
+      agentType,
+      success: false,
+      confidence: 'LOW',
+      phase: 'search',
+      suggestions: [
+        'Intenta reformular tu pregunta',
+        '¿Puedes ser más específico?',
+        'Escribe "ayuda" para ver ejemplos'
+      ]
+    };
+  }
+
+  /**
+   * Enhanced Gesundheitscheck für alle Agenten
+   */
+  getHealthStatus() {
+    const availableAgents = this.getAvailableAgentTypes();
+    const failedAgents = Array.from(this.initializationErrors.keys());
+    
+    return {
+      isInitialized: this.isInitialized,
+      supportedAgentTypes: SUPPORTED_AGENT_TYPES,
+      availableAgents,
+      failedAgents,
+      agentCount: availableAgents.length,
+      status: this.isInitialized && availableAgents.length > 0 ? 'healthy' : 'degraded',
+      agentConfigs: Object.fromEntries(
+        Array.from(this.agentConfigs.entries()).map(([type, config]) => [
+          type, 
+          {
+            name: config.name,
+            version: config.version,
+            features: config.features,
+            status: this.isAgentAvailable(type) ? 'available' : 'failed',
+            metrics: this.isAgentAvailable(type) ? this._getAgentMetrics(type) : null,
+            error: this.initializationErrors.get(type)?.message || null
+          }
+        ])
+      )
+    };
+  }
+
+  /**
+   * Gibt detaillierte Metrics für alle Agenten zurück
+   */
+  getAllMetrics() {
+    const agentMetrics = {};
+    
+    for (const agentType of this.getAvailableAgentTypes()) {
+      agentMetrics[agentType] = this._getAgentMetrics(agentType);
+    }
+    
+    return {
+      agents: agentMetrics,
+      summary: {
+        totalAgents: this.agents.size,
+        totalCalls: Array.from(this.metrics.agentCalls.values()).reduce((sum, calls) => sum + calls, 0),
+        totalErrors: Array.from(this.metrics.agentErrors.values()).reduce((sum, errors) => sum + errors, 0)
+      }
+    };
+  }
+}
+
+// Singleton-Instanz für den Server
+const agentRouter = new AlkostoAgentRouter();
+
+export { 
+  agentRouter, 
+  AlkostoAgentRouter, 
+  SUPPORTED_AGENT_TYPES,
+  AGENT_CONFIGS 
+};

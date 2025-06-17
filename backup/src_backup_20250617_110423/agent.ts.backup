@@ -1,0 +1,98 @@
+import { ChatOpenAI } from "@langchain/openai";
+import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+} from "@langchain/core/prompts";
+// 🔥 UPGRADE: ConversationSummaryBufferMemory statt BufferMemory
+import { ConversationSummaryBufferMemory } from "langchain/memory";
+import { productSearchTool } from "./tools/product-search-tool.js";
+
+export async function createAlkostoAgent() {
+  console.log("🤖 Erstelle ChatOpenAI Instanz...");
+  const llm = new ChatOpenAI({
+    modelName: "openai/gpt-3.5-turbo",
+    temperature: 0.2,
+    openAIApiKey: process.env.OPENAI_API_KEY,
+    configuration: {
+      baseURL: process.env.OPENAI_BASE_URL,
+    },
+  });
+
+  console.log("🔧 Lade Tools...");
+  const tools = [productSearchTool];
+
+  console.log("📝 Erstelle erweiterten Prompt...");
+  const prompt = ChatPromptTemplate.fromMessages([
+    ["system", `Eres un asistente de ventas experto de Alkosto, la tienda de electrónicos más importante de Colombia.
+
+🎯 INSTRUCCIONES IMPORTANTES:
+- SIEMPRE usa la herramienta 'produkt-katalog-suche' para buscar productos
+- NUNCA inventes información de productos
+- Presenta máximo 3 productos por búsqueda
+- Incluye precio, marca y características principales
+- Haz preguntas específicas si la consulta es vaga
+- Sugiere alternativas si no hay resultados exactos
+- Usa un tono amigable y profesional en español
+- Menciona garantías y beneficios cuando sean relevantes
+
+🛒 PROCESO DE VENTA OPTIMIZADO:
+1. Saluda amigablemente y entiende la necesidad del cliente
+2. Busca productos relevantes usando la herramienta
+3. Presenta opciones con ventajas claras y diferenciadas
+4. Destaca el valor y ahorro para el cliente
+5. Ofrece comparaciones si es útil
+6. Sugiere accesorios complementarios cuando sea apropiado
+7. Facilita la decisión de compra
+
+📱 CATEGORÍAS PRINCIPALES: 
+televisor, nevera, lavadora, celular, computador, tablet, parlante, auriculares, microondas, aire_acondicionado
+
+💡 CONSEJOS DE VENTA:
+- Enfócate en beneficios, no solo características
+- Menciona ofertas especiales y descuentos
+- Crea urgencia apropiada sin presionar
+- Ofrece alternativas si el presupuesto es limitado`],
+    
+    new MessagesPlaceholder("chat_history"),
+    ["human", "{input}"],
+    new MessagesPlaceholder("agent_scratchpad"),
+  ]);
+
+  console.log("🧠 Erstelle SummaryBufferMemory...");
+  // 🔥 UPGRADE: Robusteres Memory-Management
+  const memory = new ConversationSummaryBufferMemory({
+    llm, // Verwendet das gleiche LLM für Summaries
+    maxTokenLimit: 2000, // Verhindert Token-Overflow bei langen Gesprächen
+    returnMessages: true,
+    memoryKey: "chat_history",
+    outputKey: "output", // Wichtig für AgentExecutor-Kompatibilität
+    summaryMessageKey: "summary"
+  });
+
+  console.log("⚙️ Erstelle OpenAI Tools Agent...");
+  const agent = await createOpenAIToolsAgent({
+    llm,
+    tools,
+    prompt,
+  });
+
+  console.log("🏗️ Erstelle AgentExecutor...");
+  const agentExecutor = new AgentExecutor({
+    agent,
+    tools,
+    memory,
+    verbose: true,
+    maxIterations: 3, // Verhindert Endlosschleifen
+    earlyStoppingMethod: "force", // Korrekte Stopping-Methode
+  });
+
+  console.log("✅ Alkosto Agent erfolgreich erstellt!");
+  console.log(`📊 Konfiguration:
+    - Model: GPT-3.5-turbo via OpenRouter
+    - Memory: ConversationSummaryBufferMemory (max 2000 tokens)
+    - Tools: ${tools.length} verfügbar
+    - Max Iterations: 3`);
+
+  return agentExecutor;
+}

@@ -1,0 +1,43 @@
+import fs from "fs";
+import path from "path";
+import Papa from "papaparse";
+import { fileURLToPath } from "url";
+
+export interface Product {
+  [key: string]: any;
+  title: string;
+  sale_price: number;
+  product_type: string;
+  Key_features?: string;
+  brand: string;
+  link: string;
+}
+
+export function loadAndParseProducts(): Product[] {
+  // Dieser Weg ist robuster, um den Pfad zur Datei zu finden
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  // Geht vom aktuellen 'utils'-Ordner eine Ebene hoch und dann zur CSV
+  const csvPath = path.resolve(__dirname, '../../final_merged_all_categories_updated.csv');
+
+  if (!fs.existsSync(csvPath)) {
+    console.error("❌ CSV-Datei nicht im Hauptverzeichnis gefunden:", csvPath);
+    return [];
+  }
+
+  const fileContent = fs.readFileSync(csvPath, "utf8");
+
+  const parsed = Papa.parse(fileContent, {
+    header: true,
+    skipEmptyLines: true,
+    transform: (value, header) => {
+      if (header === 'sale_price') {
+        return parseFloat(value) || 0;
+      }
+      return value;
+    }
+  });
+
+  return parsed.data as Product[];
+}y
+

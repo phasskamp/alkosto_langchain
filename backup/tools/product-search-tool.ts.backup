@@ -1,0 +1,167 @@
+// src/tools/product-search-tool.ts
+import { DynamicTool } from "@langchain/core/tools";
+import { z } from "zod";
+import { loadAndParseProducts } from "../utils/product-loader.js";
+import { ProductVectorStore, VectorSearchResult } from "../utils/product-vector-store.js";
+
+const ProductSearchInputSchema = z.object({
+  kategorie: z.string().describe("Produktkategorie"),
+  presupuesto_max: z.number().min(0).describe("Maximales Budget in COP"),
+  query: z.string().optional().describe("Spezifische Suchanfrage"),
+  usar_vector_search: z.boolean().optional().default(true)
+});
+
+type ProductSearchInput = z.infer<typeof ProductSearchInputSchema>;
+
+let vectorStore: ProductVectorStore | null = null;
+let isVectorStoreInitialized = false;
+
+async function initializeVectorStore(): Promise<ProductVectorStore> {
+  if (!vectorStore) {
+    vectorStore = new ProductVectorStore();
+  }
+  
+  if (!isVectorStoreInitialized) {
+    console.log("🔄 Initializing vector store...");
+    const products = await loadAndParseProducts();
+    await vectorStore.initialize(products);
+    isVectorStoreInitialized = true;
+    console.log("✅ Vector store initialized");
+  }
+  
+  return vectorStore;
+}
+
+async function searchProducts(input: ProductSearchInput) {
+  const startTime = Date.now();
+  
+  try {
+    const allProducts = await loadProducts();
+    console.log(`📦 Loaded ${allProducts.length} products`);
+
+    const useVectorSearch = 
+      (process.env.USE_VECTOR_SEARCH === 'true' || input.usar_vector_search) && 
+      input.query && input.query.length > 3;
+
+    let searchResults: any[] = [];
+    let searchMethod = "keyword";
+
+    if (useVectorSearch) {
+      try {
+        const vectorStore = await initializeVectorStore();
+        const vectorResults = await vectorStore.hybridSearch(
+          input.query || input.kategorie, 
+          allProducts,
+          {
+            k: 6,
+            maxPrice: input.presupuesto_max
+          }
+        );
+        
+        searchResults = vectorResults.map(result => result.product);
+        searchMethod = "vector_hybrid";
+        
+        console.log(`🔍 Vector search found ${searchResults.length} results`);
+      } catch (vectorError) {
+        console.warn("⚠️ Vector search failed, falling back:", vectorError);
+        searchResults = fallbackKeywordSearch(allProducts, input);
+        searchMethod = "keyword_fallback";
+      }
+    } else {
+      searchResults = fallbackKeywordSearch(allProducts, input);
+      searchMethod = "keyword";
+    }
+
+    const searchTime = Date.now() - startTime;
+    console.log(`⚡ Search completed in ${searchTime}ms using ${searchMethod}`);
+
+    if (searchResults.length === 0) {
+      return `❌ No encontré productos de "${input.kategorie}" dentro del presupuesto de $${input.presupuesto_max.toLocaleString('es-CO')}.
+
+🔄 Sugerencias:
+- Intenta con categorías como: televisor, refrigerador, lavadora, computador
+- Aumenta tu presupuesto
+- Busca términos más generales
+
+⚡ Tiempo: ${searchTime}ms`;
+    }
+
+    // Formatiere Ergebnisse
+    let response = `✅ Encontré ${searchResults.length} productos`;
+    if (input.query) {
+      response += ` para "${input.query}"`;
+    } else {
+      response += ` de "${input.kategorie}"`;
+    }
+    response += `:\n\n`;
+
+    searchResults.slice(0, 4).forEach((product, index) => {
+      response += `${index + 1}. **${product.title}**\n`;
+      response += `   💰 $${product.price.toLocaleString('es-CO')} COP\n`;
+      response += `   🏷️ ${product.brand}\n`;
+      response += `   📋 ${product.features || 'Características no especificadas'}\n\n`;
+    });
+
+    if (searchResults.length > 4) {
+      response += `💡 Hay ${searchResults.length - 4} productos más disponibles.\n`;
+    }
+
+    response += `⚡ Búsqueda: ${searchTime}ms | Método: ${searchMethod}`;
+    
+    return response;
+
+  } catch (error) {
+    console.error("❌ Error in product search:", error);
+    return `❌ Error en la búsqueda: ${error.message}`;
+  }
+}
+
+function fallbackKeywordSearch(products: any[], input: ProductSearchInput) {
+  const searchTerms = [
+    input.kategorie.toLowerCase(),
+    ...(input.query ? input.query.toLowerCase().split(/\s+/) : [])
+  ].filter(term => term.length > 2);
+
+  return products.filter(product => {
+    if (product.price > input.presupuesto_max) return false;
+
+    const searchText = [
+      product.title,
+      product.brand,
+      product.category,
+      product._category,
+      product.type,
+      product.features || ""
+    ].join(" ").toLowerCase();
+
+    return searchTerms.some(term => searchText.includes(term));
+  }).sort((a, b) => a.price - b.price);
+}
+
+export const productSearchTool = new DynamicTool({
+  name: "buscar_productos",
+  description: `
+Busca productos en el catálogo de Alkosto.
+
+Input: JSON con:
+- kategorie: "televisor", "refrigerador", "lavadora", "computador"
+- presupuesto_max: presupuesto máximo en COP
+- query: (opcional) descripción específica
+
+Ejemplo: {"kategorie": "televisor", "presupuesto_max": 2000000, "query": "Samsung 55 pulgadas"}
+  `.trim(),
+
+  func: async (input: string) => {
+    try {
+      const parsedInput = JSON.parse(input);
+      const validatedInput = ProductSearchInputSchema.parse(parsedInput);
+      
+      console.log("🔍 Product search input:", validatedInput);
+      return await searchProducts(validatedInput);
+      
+    } catch (error) {
+      console.error("❌ Tool error:", error);
+      return `❌ Error: Formato inválido. Usa: {"kategorie": "televisor", "presupuesto_max": 2000000}`;
+    }
+  }
+});

@@ -1,0 +1,158 @@
+2025-06-12 17:29:56 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Invalid stopping method: generate",
+  "stack": "Error: Invalid stopping method: generate\n    at RunnableMultiActionAgent.returnStoppedResponse (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/agent.cjs:49:15)\n    at AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:529:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async runComprehensiveTest (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:68:24)",
+  "context": {
+    "test_case": "📱 Búsqueda de celular",
+    "query": "Quiero un smartphone bueno con cámara excelente",
+    "duration": 4190
+  }
+}
+2025-06-13 09:01:26 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'e', \"televisor 1500000\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'e', \"televisor 1500000\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "televisor 1500000",
+    "search_time": 147
+  }
+}
+2025-06-13 09:01:30 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'e', \"televisor, 800000\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'e', \"televisor, 800000\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "televisor, 800000",
+    "search_time": 0
+  }
+}
+2025-06-13 09:01:36 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'e', \"televisor\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'e', \"televisor\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "televisor",
+    "search_time": 1
+  }
+}
+2025-06-13 09:01:37 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 's', \"smart TV\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 's', \"smart TV\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "smart TV",
+    "search_time": 0
+  }
+}
+2025-06-13 09:01:37 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'T', \"TV Netflix\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'T', \"TV Netflix\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 1)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "TV Netflix",
+    "search_time": 0
+  }
+}
+2025-06-13 09:01:39 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 's', \"smart TV\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 's', \"smart TV\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "smart TV",
+    "search_time": 0
+  }
+}
+2025-06-13 09:01:41 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'c', \"celular\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'c', \"celular\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "celular",
+    "search_time": 0
+  }
+}
+2025-06-13 09:01:45 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'l', \"laptop\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'l', \"laptop\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "laptop",
+    "search_time": 0
+  }
+}
+2025-06-13 09:01:49 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'm', \"microondas\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'm', \"microondas\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async testVectorSearchCapabilities (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/test-agent.ts:66:24)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "microondas",
+    "search_time": 0
+  }
+}
+2025-06-13 09:04:13 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'm', \"microondas\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'm', \"microondas\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async quickDebug (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/debug-agent.ts:26:26)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "microondas",
+    "search_time": 157
+  }
+}
+2025-06-13 09:04:38 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "error": "Unexpected token 'm', \"microondas\" is not valid JSON",
+  "stack": "SyntaxError: Unexpected token 'm', \"microondas\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:43:28)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async quickDebug (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/debug-agent.ts:26:26)",
+  "context": {
+    "context": "product_search_tool",
+    "input": "microondas",
+    "search_time": 146
+  }
+}
+2025-06-13 09:06:32 [ERROR]: ❌ Agent error occurred
+{
+  "service": "alkosto-chatbot",
+  "version": "1.0.0",
+  "context": {
+    "error": "import_logger.agentLogger.info is not a function",
+    "stack": "TypeError: import_logger.agentLogger.info is not a function\n    at DynamicTool.func (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/src/tools/product-search-tool.ts:47:19)\n    at DynamicTool._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:264:21)\n    at DynamicTool.call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63_/node_modules/@langchain/core/dist/tools/index.cjs:144:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:486:27\n    at async Promise.all (index 0)\n    at async AgentExecutor._call (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/agents/executor.cjs:478:30)\n    at async AgentExecutor.invoke (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/node_modules/.pnpm/langchain@0.3.28_@langchain+core@0.3.58_openai@4.104.0_ws@8.18.2_zod@3.25.63___axios@1._45ee8050fdb97fb3f6397439fd7eb5d8/node_modules/langchain/dist/chains/base.cjs:58:28)\n    at async quickDebug (/Users/philipphasskamp/alkosto_agent_final/alkosto_langchain/debug-agent.ts:26:26)",
+    "context": {
+      "input": "microondas",
+      "context": "product_search_tool",
+      "search_time": 0
+    }
+  }
+}

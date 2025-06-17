@@ -1,0 +1,221 @@
+// Environment variables laden
+process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || "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";
+process.env.OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1";
+process.env.USE_VECTOR_SEARCH = process.env.USE_VECTOR_SEARCH || "true";
+
+// Rest deines bestehenden Codes...
+import { createAlkostoAgent } from "./agent.js";
+import { agentLogger, performanceLogger } from "./utils/logger.js";
+
+async function testVectorSearchCapabilities() {
+  console.log("🧪 Testing Vector Search Capabilities...\n");
+  
+  try {
+    const agent = await createAlkostoAgent();
+    
+    // 🔍 Test-Szenarien für semantische Suche
+    const semanticTests = [
+      {
+        name: "📺 Básico: Televisor directo",
+        query: "Busco un televisor por menos de 1.500.000 pesos",
+        expected: "Direct match",
+        searchType: "exact"
+      },
+      {
+        name: "🧠 Semántico: TV como sinónimo",
+        query: "Necesito una TV buena y barata, máximo 800.000",
+        expected: "Semantic understanding of TV = televisor",
+        searchType: "semantic"
+      },
+      {
+        name: "🎯 Contexto: Descripción detallada", 
+        query: "Quiero algo para ver Netflix en la sala, presupuesto 1.200.000",
+        expected: "Contextual understanding -> TV",
+        searchType: "contextual"
+      },
+      {
+        name: "📱 Sinónimos: Smartphone por celular",
+        query: "Busco un smartphone con buena cámara, máximo 900.000 pesos",
+        expected: "Smartphone = celular understanding",
+        searchType: "semantic"
+      },
+      {
+        name: "💻 Variaciones: Laptop por computador",
+        query: "Necesito una laptop para trabajar, presupuesto 2.500.000",
+        expected: "Laptop = computador understanding", 
+        searchType: "semantic"
+      },
+      {
+        name: "🏠 Contexto complejo: Electrodoméstico para cocina",
+        query: "Algo para calentar comida rápido en la cocina, menos de 500.000",
+        expected: "Contextual -> microondas",
+        searchType: "contextual"
+      }
+    ];
+
+    const results = [];
+    
+    for (let i = 0; i < semanticTests.length; i++) {
+      const test = semanticTests[i];
+      
+      console.log(`\n${'='.repeat(70)}`);
+      console.log(`${test.name}`);
+      console.log(`${'='.repeat(70)}`);
+      console.log(`🗣️  Query: "${test.query}"`);
+      console.log(`🎯  Expected: ${test.expected}`);
+      console.log(`🔍  Type: ${test.searchType}`);
+      console.log();
+      
+      const startTime = Date.now();
+      
+      try {
+        const result = await agent.invoke({
+          input: test.query
+        });
+        
+        const duration = Date.now() - startTime;
+        
+        console.log("🤖 AGENT RESPONSE:");
+        console.log("-".repeat(50));
+        console.log(result.output);
+        console.log("-".repeat(50));
+        
+        // 📊 Analysiere die Antwort
+        const analysis = analyzeResponse(result.output, test);
+        console.log(`\n📊 ANALYSIS:`);
+        console.log(`   Products Found: ${analysis.productsFound}`);
+        console.log(`   Search Method: ${analysis.searchMethod}`);
+        console.log(`   Semantic Quality: ${analysis.semanticQuality}`);
+        console.log(`   Response Time: ${duration}ms`);
+        
+        results.push({
+          test: test.name,
+          success: analysis.productsFound > 0,
+          duration,
+          productsFound: analysis.productsFound,
+          searchMethod: analysis.searchMethod,
+          semanticQuality: analysis.semanticQuality
+        });
+        
+      } catch (error) {
+        console.log("❌ ERROR:", (error as Error).message);
+        results.push({
+          test: test.name,
+          success: false,
+          error: (error as Error).message,
+          duration: Date.now() - startTime
+        });
+      }
+      
+      // Pause zwischen Tests
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
+    // 📈 Zusammenfassung
+    console.log(`\n${'='.repeat(70)}`);
+    console.log("📊 VECTOR SEARCH TEST SUMMARY");
+    console.log(`${'='.repeat(70)}`);
+    
+    const successfulTests = results.filter(r => r.success);
+    const avgResponseTime = successfulTests.reduce((sum, r) => sum + r.duration, 0) / successfulTests.length;
+    const vectorSearchTests = results.filter(r => r.searchMethod === 'vector' || r.searchMethod === 'Semántica + String');
+    const highQualityResults = results.filter(r => r.semanticQuality === 'High');
+    
+    console.log(`✅ Success Rate: ${(successfulTests.length / results.length * 100).toFixed(1)}%`);
+    console.log(`⚡ Avg Response Time: ${avgResponseTime.toFixed(0)}ms`);
+    console.log(`🧠 Vector Search Usage: ${vectorSearchTests.length}/${results.length} tests`);
+    console.log(`🎯 High Semantic Quality: ${highQualityResults.length}/${results.length} tests`);
+    
+    console.log(`\n📋 Detailed Results:`);
+    results.forEach((result, idx) => {
+      const status = result.success ? "✅" : "❌";
+      const method = result.searchMethod || "unknown";
+      const quality = result.semanticQuality || "unknown";
+      console.log(`${idx + 1}. ${status} ${method} | ${quality} quality | ${result.duration}ms`);
+    });
+    
+    // 💡 Empfehlungen
+    console.log(`\n💡 RECOMMENDATIONS:`);
+    if (vectorSearchTests.length === 0) {
+      console.log("• Enable Vector Search (USE_VECTOR_SEARCH=true) for better semantic understanding");
+    }
+    if (avgResponseTime > 3000) {
+      console.log("• Consider optimizing response times");
+    }
+    if (highQualityResults.length < results.length * 0.8) {
+      console.log("• Consider fine-tuning prompts for better semantic understanding");
+    }
+    
+  } catch (error) {
+    console.error("💥 Test setup failed:", error);
+  }
+}
+
+function analyzeResponse(response: string, test: any): {
+  productsFound: number;
+  searchMethod: string;
+  semanticQuality: 'High' | 'Medium' | 'Low';
+} {
+  // Zähle gefundene Produkte
+  const productMatches = response.match(/PRODUCTO \d+/g);
+  const productsFound = productMatches ? productMatches.length : 0;
+  
+  // Identifiziere Search Method
+  let searchMethod = 'unknown';
+  if (response.includes('Semántica + String')) {
+    searchMethod = 'vector';
+  } else if (response.includes('String-based')) {
+    searchMethod = 'string';
+  } else if (response.includes('Búsqueda:')) {
+    searchMethod = 'hybrid';
+  }
+  
+  // Bewerte semantische Qualität basierend auf Test-Typ und Ergebnissen
+  let semanticQuality: 'High' | 'Medium' | 'Low' = 'Low';
+  
+  if (productsFound > 0) {
+    if (test.searchType === 'exact') {
+      semanticQuality = 'High'; // Direkte Treffer sind immer gut
+    } else if (test.searchType === 'semantic') {
+      // Prüfe ob semantische Verbindung erkannt wurde
+      if (searchMethod === 'vector' || response.toLowerCase().includes(getExpectedProduct(test.query))) {
+        semanticQuality = 'High';
+      } else {
+        semanticQuality = 'Medium';
+      }
+    } else if (test.searchType === 'contextual') {
+      // Kontextuelle Erkennung ist schwieriger zu bewerten
+      if (productsFound > 0 && searchMethod === 'vector') {
+        semanticQuality = 'High';
+      } else if (productsFound > 0) {
+        semanticQuality = 'Medium';
+      }
+    }
+  }
+  
+  return {
+    productsFound,
+    searchMethod,
+    semanticQuality
+  };
+}
+
+function getExpectedProduct(query: string): string {
+  query = query.toLowerCase();
+  if (query.includes('tv') || query.includes('netflix')) return 'televisor';
+  if (query.includes('smartphone')) return 'celular';
+  if (query.includes('laptop')) return 'computador';
+  if (query.includes('calentar comida') || query.includes('cocina')) return 'microondas';
+  return '';
+}
+
+// 🚀 Test ausführen
+testVectorSearchCapabilities()
+  .then(() => {
+    console.log("\n🎉 Vector Search Tests completed!");
+    process.exit(0);
+  })
+  .catch(error => {
+    console.error("💥 Tests failed:", error);
+    process.exit(1);
+  });
