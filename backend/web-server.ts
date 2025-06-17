@@ -1,32 +1,28 @@
-import express from "express"
-import { startAgent } from "./src/alkosto-graduated-search-agent.js"
-import dotenv from "dotenv"
+import express from "express";
+import dotenv from "dotenv";
+import { startAgent } from "./src/alkosto-graduated-search-agent.js";
 
-dotenv.config()
+dotenv.config();
 
-const app = express()
-const PORT = process.env.PORT || 3000
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(express.json())
+// Healthcheck-Route
+app.get("/health", (req, res) => {
+  res.status(200).send("✅ Server läuft – Healthcheck erfolgreich");
+});
 
-app.post("/ask", async (req, res) => {
-  const { query } = req.body
-  if (!query) return res.status(400).json({ error: "Missing query" })
-
+// Haupt-Route
+app.get("/", async (req, res) => {
   try {
-    const result = await startAgent(query)
-    res.json(result)
-  } catch (err) {
-    console.error("Agent error:", err)
-    res.status(500).json({ error: "Agent failed" })
+    const result = await startAgent("Hola");
+    res.send(result);
+  } catch (error) {
+    console.error("❌ Fehler beim Starten des Agenten:", error);
+    res.status(500).send("Fehler beim Starten des Agenten");
   }
-})
-
-app.get("/", (_, res) => {
-  res.send("🟢 Alkosto Agent is running.")
-})
+});
 
 app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`)
-})
-
+  console.log(`🌐 Server läuft auf http://localhost:${PORT}`);
+});
