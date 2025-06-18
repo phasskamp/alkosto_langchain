@@ -31,11 +31,12 @@ async function initializeAgent() {
     agentInitializationPromise = (async () => {
         try {
             console.log('📦 Importing agent module from dist...');
-            // ✅ FIXED: Correct path to compiled agent
-            const { createAlkostoGraduatedSearchAgent } = await import('./dist/alkosto-graduated-search-agent.js');
+            // ✅ FIXED: Import the correct export name
+            const { GraduatedSearchAgent } = await import('./dist/alkosto-graduated-search-agent.js');
             
             console.log('🏗️ Creating agent instance...');
-            alkostoAgent = await createAlkostoGraduatedSearchAgent();
+            // ✅ FIXED: Use the correct constructor
+            alkostoAgent = new GraduatedSearchAgent();
             
             console.log('✅ Agent initialized successfully!');
             agentInitialized = true;
@@ -114,6 +115,7 @@ app.post('/api/chat', async (req, res) => {
         if (agentInitialized && alkostoAgent) {
             console.log('✅ Using real agent...');
             try {
+                // ✅ FIXED: Use correct method call based on agent structure
                 const agentResponse = await alkostoAgent.invoke({
                     input: message,
                     sessionId: sessionId
