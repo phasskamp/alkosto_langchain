@@ -115,17 +115,16 @@ app.post('/api/chat', async (req, res) => {
         if (agentInitialized && alkostoAgent) {
             console.log('✅ Using real agent...');
             try {
-                // ✅ FIXED: Use correct method call based on agent structure
-                const agentResponse = await alkostoAgent.invoke({
-                    input: message,
-                    sessionId: sessionId
-                });
+                // ✅ FIXED: Use correct agent method
+                console.log('🤖 Calling agent.processMessage()...');
+                const agentResponse = await alkostoAgent.processMessage(message);
 
                 const responseTime = Date.now() - startTime;
                 console.log(`⚡ Agent response time: ${responseTime}ms`);
+                console.log('📤 Agent response:', agentResponse);
 
                 return res.json({
-                    response: agentResponse.output,
+                    response: agentResponse,
                     sessionId: sessionId,
                     timestamp: new Date().toISOString(),
                     responseTime: responseTime,
