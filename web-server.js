@@ -30,8 +30,9 @@ async function initializeAgent() {
     console.log('🤖 Starting agent initialization...');
     agentInitializationPromise = (async () => {
         try {
-            console.log('📦 Importing agent module...');
-            const { createAlkostoGraduatedSearchAgent } = await import('./src/alkosto-graduated-search-agent.js');
+            console.log('📦 Importing agent module from dist...');
+            // ✅ FIXED: Correct path to compiled agent
+            const { createAlkostoGraduatedSearchAgent } = await import('./dist/alkosto-graduated-search-agent.js');
             
             console.log('🏗️ Creating agent instance...');
             alkostoAgent = await createAlkostoGraduatedSearchAgent();
