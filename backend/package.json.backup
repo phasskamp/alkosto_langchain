@@ -1,0 +1,26 @@
+{
+  "name": "alkosto-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "web-server.js",
+  "scripts": {
+    "start": "node web-server.js",
+    "dev": "npx tsx src/alkosto-graduated-search-agent.ts",
+    "test": "npx tsx src/alkosto-graduated-search-agent.ts",
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "papaparse": "^5.4.1",
+    "langchain": "^0.2.3",
+    "@langchain/openai": "^0.2.0",
+    "@langchain/community": "^0.2.0",
+    "tsx": "^4.7.0",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
