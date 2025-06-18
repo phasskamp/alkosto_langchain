@@ -1,87 +1,194 @@
-#!/usr/bin/env node
-
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 // Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3001',
-    'https://alkosto-frontend-*.vercel.app',
-    'https://*.vercel.app'
-  ],
-  credentials: true
-}));
+app.use(cors());
+app.use(express.json());
 
-app.use(express.json({ limit: '10mb' }));
+// Enhanced logging
+console.log('🚀 Starting Alkosto Backend...');
+console.log('📊 Environment:', process.env.NODE_ENV);
+console.log('🔑 API Key present:', !!process.env.OPENAI_API_KEY);
+console.log('🌐 Base URL:', process.env.OPENAI_BASE_URL);
 
-// Request logging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
+// Global agent variable
+let alkostoAgent = null;
+let agentInitializationPromise = null;
+let agentInitialized = false;
+let agentError = null;
+
+// Agent initialization function
+async function initializeAgent() {
+    if (agentInitializationPromise) {
+        console.log('⏳ Agent initialization already in progress...');
+        return agentInitializationPromise;
+    }
+
+    console.log('🤖 Starting agent initialization...');
+    agentInitializationPromise = (async () => {
+        try {
+            console.log('📦 Importing agent module...');
+            const { createAlkostoGraduatedSearchAgent } = await import('./src/alkosto-graduated-search-agent.js');
+            
+            console.log('🏗️ Creating agent instance...');
+            alkostoAgent = await createAlkostoGraduatedSearchAgent();
+            
+            console.log('✅ Agent initialized successfully!');
+            agentInitialized = true;
+            return alkostoAgent;
+        } catch (error) {
+            console.error('❌ Agent initialization failed:', error);
+            console.error('📄 Error details:', error.message);
+            console.error('🔍 Stack trace:', error.stack);
+            agentError = error;
+            throw error;
+        }
+    })();
+
+    return agentInitializationPromise;
+}
+
+// Root endpoint
+app.get('/', (req, res) => {
+    console.log(`${new Date().toISOString()} - GET /`);
+    res.json({
+        message: "Alkosto AI Backend is running!",
+        agent: agentInitialized ? "Graduated Search Agent" : "Initializing...",
+        agentError: agentError ? agentError.message : null,
+        endpoints: {
+            health: "/health",
+            chat: "/api/chat"
+        }
+    });
 });
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    agent: 'Graduated Search Agent Ready'
-  });
-});
-
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Alkosto AI Backend is running!',
-    agent: 'Graduated Search Agent',
-    endpoints: {
-      health: '/health',
-      chat: '/api/chat'
-    }
-  });
-});
-
-// Chat endpoint - will integrate real agent later
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { message, sessionId } = req.body;
-    
-    console.log('📨 Chat request:', { message, sessionId });
-    
-    // Mock response that mimics your working agent
-    const response = {
-      message: `¡Hola! Recibí tu mensaje: "${message}". El Agente de Búsqueda Graduada está funcionando. ¿Qué producto buscas?`,
-      confidence: 'HIGH',
-      agentErrors: [],
-      sessionId: sessionId || 'session-' + Date.now(),
-      timestamp: new Date().toISOString(),
-      mode: '🔍 Consulta Inteligente'
-    };
-    
-    res.json(response);
-  } catch (error) {
-    console.error('❌ Chat error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'El agente no está disponible en este momento.',
-      agentErrors: [error.message],
-      timestamp: new Date().toISOString()
+    console.log(`${new Date().toISOString()} - GET /health`);
+    res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        version: "1.0.0",
+        agent: agentInitialized ? "Graduated Search Agent Ready" : "Agent Initializing...",
+        agentError: agentError ? agentError.message : null,
+        environment: {
+            nodeEnv: process.env.NODE_ENV,
+            hasApiKey: !!process.env.OPENAI_API_KEY,
+            baseUrl: process.env.OPENAI_BASE_URL
+        }
     });
-  }
+});
+
+// Chat endpoint
+app.post('/api/chat', async (req, res) => {
+    const startTime = Date.now();
+    console.log(`${new Date().toISOString()} - POST /api/chat`);
+    console.log('📨 Chat request:', req.body);
+
+    try {
+        const { message, sessionId } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        console.log('🔍 Checking agent status...');
+        console.log('Agent initialized:', agentInitialized);
+        console.log('Agent error:', agentError);
+
+        // Try to initialize agent if not already done
+        if (!agentInitialized && !agentError) {
+            console.log('🚀 Attempting agent initialization...');
+            try {
+                await initializeAgent();
+            } catch (error) {
+                console.error('❌ Failed to initialize agent:', error);
+            }
+        }
+
+        // If agent is available, use it
+        if (agentInitialized && alkostoAgent) {
+            console.log('✅ Using real agent...');
+            try {
+                const agentResponse = await alkostoAgent.invoke({
+                    input: message,
+                    sessionId: sessionId
+                });
+
+                const responseTime = Date.now() - startTime;
+                console.log(`⚡ Agent response time: ${responseTime}ms`);
+
+                return res.json({
+                    response: agentResponse.output,
+                    sessionId: sessionId,
+                    timestamp: new Date().toISOString(),
+                    responseTime: responseTime,
+                    mode: "🤖 AI Agent",
+                    agentErrors: []
+                });
+            } catch (error) {
+                console.error('❌ Agent execution error:', error);
+                // Fall through to fallback
+            }
+        }
+
+        // Fallback response
+        console.log('⚠️ Using fallback response');
+        const responseTime = Date.now() - startTime;
+        
+        res.json({
+            message: `¡Hola! Recibí tu mensaje: "${message}". El Agente de Búsqueda Graduada está funcionando. ¿Qué producto buscas?`,
+            confidence: "HIGH",
+            agentErrors: agentError ? [agentError.message] : ["Agent not initialized"],
+            sessionId: sessionId,
+            timestamp: new Date().toISOString(),
+            mode: "🔍 Consulta Inteligente",
+            debug: {
+                agentInitialized,
+                agentError: agentError ? agentError.message : null,
+                responseTime
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Chat endpoint error:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// Debug endpoint
+app.get('/api/debug', (req, res) => {
+    res.json({
+        agentInitialized,
+        agentError: agentError ? agentError.message : null,
+        environment: {
+            nodeEnv: process.env.NODE_ENV,
+            hasApiKey: !!process.env.OPENAI_API_KEY,
+            baseUrl: process.env.OPENAI_BASE_URL,
+            port: PORT
+        },
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Alkosto Backend running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+app.listen(PORT, () => {
+    console.log(`🚀 Alkosto Backend running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+    
+    // Start agent initialization in background
+    console.log('🤖 Starting background agent initialization...');
+    initializeAgent().catch(error => {
+        console.error('❌ Background agent initialization failed:', error);
+    });
 });
+
+export default app;
