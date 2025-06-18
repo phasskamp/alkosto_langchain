@@ -1,7 +1,7 @@
 // Enhanced Product Search Tool mit Brand Intelligence
 import { DynamicTool } from "@langchain/core/tools";
 import { z } from "zod";
-import { loadAndParseProducts } from "../utils/product-loader";
+import { loadAndParseProducts } from "../utils/product-loader.js";
 // ✅ Enhanced Input Schema mit Brand Support
 const productSearchSchema = z.object({
     kategorie: z.string().describe("Produktkategorie (televisor, celular, computador, lavadora)"),
